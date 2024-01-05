@@ -30,6 +30,10 @@ export declare const STABLE_STATE_LAYOUT_V1: import("../marshmallow").Structure<
     quoteNeedTakePnl: import("bn.js");
     quoteTotalPnl: import("bn.js");
     baseTotalPnl: import("bn.js");
+    poolOpenTime: import("bn.js");
+    punishPcAmount: import("bn.js");
+    punishCoinAmount: import("bn.js");
+    orderbookToInitTime: import("bn.js");
     swapBaseInAmount: import("bn.js");
     swapQuoteOutAmount: import("bn.js");
     swapBase2QuoteFee: import("bn.js");
@@ -51,10 +55,6 @@ export declare const STABLE_STATE_LAYOUT_V1: import("../marshmallow").Structure<
     abortTradeFactor: import("bn.js");
     priceTickMultiplier: import("bn.js");
     priceTick: import("bn.js");
-    poolOpenTime: import("bn.js");
-    punishPcAmount: import("bn.js");
-    punishCoinAmount: import("bn.js");
-    orderbookToInitTime: import("bn.js");
     modelDataAccount: import("@solana/web3.js").PublicKey;
 }>;
 export type StableStateLayoutV1 = typeof STABLE_STATE_LAYOUT_V1;

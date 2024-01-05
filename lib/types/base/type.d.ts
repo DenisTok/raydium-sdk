@@ -42,10 +42,10 @@ export declare enum InstructionType {
     'transferAmount' = 4,
     'initMint' = 5,
     'mintTo' = 6,
-    'initMarket' = 7,
-    'util1216OwnerClaim' = 8,
-    'setComputeUnitPrice' = 9,
-    'setComputeUnitLimit' = 10,
+    'initMarket' = 7,// create market main ins
+    'util1216OwnerClaim' = 8,// owner claim token ins
+    'setComputeUnitPrice' = 9,// addComputeBudget
+    'setComputeUnitLimit' = 10,// addComputeBudget
     'clmmCreatePool' = 11,
     'clmmOpenPosition' = 12,
     'clmmIncreasePosition' = 13,

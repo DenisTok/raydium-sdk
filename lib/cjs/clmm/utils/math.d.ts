@@ -54,7 +54,9 @@ export interface StepComputations {
 export declare abstract class SwapMath {
     static swapCompute(programId: PublicKey, poolId: PublicKey, tickArrayCache: {
         [key: string]: TickArray;
-    }, tickArrayBitmap: BN[], tickarrayBitmapExtension: TickArrayBitmapExtensionLayout, zeroForOne: boolean, fee: number, liquidity: BN, currentTick: number, tickSpacing: number, currentSqrtPriceX64: BN, amountSpecified: BN, lastSavedTickArrayStartIndex: number, sqrtPriceLimitX64?: BN): {
+    }, tickArrayBitmap: BN[], tickarrayBitmapExtension: TickArrayBitmapExtensionLayout, zeroForOne: boolean, fee: number, liquidity: BN, currentTick: number, tickSpacing: number, currentSqrtPriceX64: BN, amountSpecified: BN, lastSavedTickArrayStartIndex: number, sqrtPriceLimitX64?: BN, catchLiquidityInsufficient?: boolean): {
+        allTrade: boolean;
+        amountSpecifiedRemaining: BN;
         amountCalculated: BN;
         feeAmount: BN;
         sqrtPriceX64: BN;

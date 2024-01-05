@@ -20,12 +20,13 @@ export declare function unwarpSol({ ownerInfo, tokenAccounts, makeTxVersion, con
     address: {};
     innerTransactions: (import("./type").InnerSimpleLegacyTransaction | InnerSimpleV0Transaction)[];
 }>;
-export declare function buildSimpleTransaction({ connection, makeTxVersion, payer, innerTransactions, recentBlockhash, }: {
+export declare function buildSimpleTransaction({ connection, makeTxVersion, payer, innerTransactions, recentBlockhash, addLookupTableInfo, }: {
     makeTxVersion: TxVersion;
     payer: PublicKey;
     connection: Connection;
     innerTransactions: InnerSimpleTransaction[];
     recentBlockhash?: string | undefined;
+    addLookupTableInfo?: CacheLTA | undefined;
 }): Promise<(VersionedTransaction | Transaction)[]>;
 export declare function buildTransaction({ connection, makeTxVersion, payer, innerTransactions, recentBlockhash, lookupTableCache, }: {
     makeTxVersion: TxVersion;

@@ -2176,8 +2176,13 @@ export class Farm extends Base {
 
     const signers: Signer[] = []
 
-    for (const { lpVault, wrapped, apiPoolInfo } of Object.values(fetchPoolInfos)) {
-      if (wrapped === undefined || wrapped.pendingRewards.find((i) => i.gt(ZERO)) === undefined) continue
+    for (const { lpVault, wrapped, apiPoolInfo, ledger } of Object.values(fetchPoolInfos)) {
+      if (
+        wrapped === undefined ||
+        ledger === undefined ||
+        !(wrapped.pendingRewards.find((i) => i.gt(ZERO)) !== undefined || ledger.deposited.isZero())
+      )
+        continue
 
       const lpMint = lpVault.mint
       const lpMintUseSOLBalance = ownerInfo.useSOLBalance && lpMint.equals(Token.WSOL.mint)
@@ -2625,7 +2630,20 @@ export class Farm extends Base {
         computeBudgetConfig,
         payer: wallet,
         innerTransaction: [
-          { instructionTypes: frontInstructionsType, instructions: frontInstructions, signers: [] },
+          {
+            instructionTypes: frontInstructionsType.slice(0, 10),
+            instructions: frontInstructions.slice(0, 10),
+            signers: [],
+          },
+          ...(frontInstructions.length > 10
+            ? [
+                {
+                  instructionTypes: frontInstructionsType.slice(10),
+                  instructions: frontInstructions.slice(10),
+                  signers: [],
+                },
+              ]
+            : []),
           ...instructions,
           { instructionTypes: endInstructionsType, instructions: endInstructions, signers: [] },
         ],

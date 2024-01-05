@@ -61,7 +61,7 @@ import {
   TickArrayBitmapExtension,
   TickArrayLayout,
 } from './layout'
-import { MAX_SQRT_PRICE_X64, MIN_SQRT_PRICE_X64 } from './utils/constants'
+import { MAX_SQRT_PRICE_X64, MIN_SQRT_PRICE_X64, U64_IGNORE_RANGE } from './utils/constants'
 import { LiquidityMath, MathUtil, SqrtPriceMath, TickMath } from './utils/math'
 import {
   getPdaExBitmapAccount,
@@ -225,6 +225,7 @@ export interface ReturnTypeGetTickPrice {
   tickSqrtPriceX64: BN
 }
 export interface ReturnTypeComputeAmountOutFormat {
+  allTrade: boolean
   realAmountIn: TransferAmountFee
   amountOut: TransferAmountFee
   minAmountOut: TransferAmountFee
@@ -236,6 +237,7 @@ export interface ReturnTypeComputeAmountOutFormat {
   remainingAccounts: PublicKey[]
 }
 export interface ReturnTypeComputeAmountOut {
+  allTrade: boolean
   realAmountIn: GetTransferAmountFee
   amountOut: GetTransferAmountFee
   minAmountOut: GetTransferAmountFee
@@ -306,9 +308,7 @@ export class Clmm extends Base {
     startTime: BN
     owner: PublicKey
   }): ClmmPoolInfo {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const [mintA, mintB, initPrice] = mint1.mint._bn.gt(mint2.mint._bn)
+    const [mintA, mintB, initPrice] = new BN(mint1.mint.toBuffer()).gt(new BN(mint2.mint.toBuffer()))
       ? [mint2, mint1, new Decimal(1).div(initialPrice)]
       : [mint1, mint2, initialPrice]
 
@@ -434,9 +434,7 @@ export class Clmm extends Base {
     startTime: BN
     computeBudgetConfig?: ComputeBudgetConfig
   }) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const [mintA, mintB, initPrice] = mint1.mint._bn.gt(mint2.mint._bn)
+    const [mintA, mintB, initPrice] = new BN(mint1.mint.toBuffer()).gt(new BN(mint2.mint.toBuffer()))
       ? [mint2, mint1, new Decimal(1).div(initialPrice)]
       : [mint1, mint2, initialPrice]
 
@@ -3338,6 +3336,7 @@ export class Clmm extends Base {
       add,
       token2022Infos,
       epochInfo,
+      amountAddFee: amountHasFee,
     })
   }
 
@@ -3351,6 +3350,7 @@ export class Clmm extends Base {
     add,
     token2022Infos,
     epochInfo,
+    amountHasFee,
   }: {
     poolInfo: ClmmPoolInfo
     tickLower: number
@@ -3362,6 +3362,7 @@ export class Clmm extends Base {
 
     token2022Infos: ReturnTypeFetchMultipleMintInfos
     epochInfo: EpochInfo
+    amountHasFee: boolean
   }): ReturnTypeGetLiquidityAmountOut {
     const [_tickLower, _tickUpper, _amountA, _amountB] =
       tickLower < tickUpper ? [tickLower, tickUpper, amountA, amountB] : [tickUpper, tickLower, amountB, amountA]
@@ -3369,12 +3370,27 @@ export class Clmm extends Base {
     const sqrtPriceX64A = SqrtPriceMath.getSqrtPriceX64FromTick(_tickLower)
     const sqrtPriceX64B = SqrtPriceMath.getSqrtPriceX64FromTick(_tickUpper)
 
+    const [amountFeeA, amountFeeB] = [
+      getTransferAmountFee(
+        _amountA,
+        token2022Infos[poolInfo.mintA.mint.toString()]?.feeConfig,
+        epochInfo,
+        !amountHasFee,
+      ),
+      getTransferAmountFee(
+        _amountB,
+        token2022Infos[poolInfo.mintB.mint.toString()]?.feeConfig,
+        epochInfo,
+        !amountHasFee,
+      ),
+    ]
+
     const liquidity = LiquidityMath.getLiquidityFromTokenAmounts(
       sqrtPriceX64,
       sqrtPriceX64A,
       sqrtPriceX64B,
-      _amountA,
-      _amountB,
+      amountFeeA.amount.sub(amountFeeA.fee ?? ZERO),
+      amountFeeB.amount.sub(amountFeeB.fee ?? ZERO),
     )
 
     return this.getAmountsFromLiquidity({
@@ -3386,6 +3402,7 @@ export class Clmm extends Base {
       add,
       token2022Infos,
       epochInfo,
+      amountAddFee: !amountHasFee,
     })
   }
 
@@ -3398,6 +3415,7 @@ export class Clmm extends Base {
     add,
     token2022Infos,
     epochInfo,
+    amountAddFee,
   }: {
     poolInfo: ClmmPoolInfo
     tickLower: number
@@ -3408,6 +3426,7 @@ export class Clmm extends Base {
 
     token2022Infos: ReturnTypeFetchMultipleMintInfos
     epochInfo: EpochInfo
+    amountAddFee: boolean
   }): ReturnTypeGetLiquidityAmountOut {
     const sqrtPriceX64A = SqrtPriceMath.getSqrtPriceX64FromTick(tickLower)
     const sqrtPriceX64B = SqrtPriceMath.getSqrtPriceX64FromTick(tickUpper)
@@ -3422,21 +3441,31 @@ export class Clmm extends Base {
       add,
     )
     const [amountA, amountB] = [
-      getTransferAmountFee(amounts.amountA, token2022Infos[poolInfo.mintA.mint.toString()]?.feeConfig, epochInfo, true),
-      getTransferAmountFee(amounts.amountB, token2022Infos[poolInfo.mintB.mint.toString()]?.feeConfig, epochInfo, true),
+      getTransferAmountFee(
+        amounts.amountA,
+        token2022Infos[poolInfo.mintA.mint.toString()]?.feeConfig,
+        epochInfo,
+        amountAddFee,
+      ),
+      getTransferAmountFee(
+        amounts.amountB,
+        token2022Infos[poolInfo.mintB.mint.toString()]?.feeConfig,
+        epochInfo,
+        amountAddFee,
+      ),
     ]
     const [amountSlippageA, amountSlippageB] = [
       getTransferAmountFee(
         new BN(new Decimal(amounts.amountA.toString()).mul(coefficientRe).toFixed(0)),
         token2022Infos[poolInfo.mintA.mint.toString()]?.feeConfig,
         epochInfo,
-        true,
+        amountAddFee,
       ),
       getTransferAmountFee(
         new BN(new Decimal(amounts.amountB.toString()).mul(coefficientRe).toFixed(0)),
         token2022Infos[poolInfo.mintB.mint.toString()]?.feeConfig,
         epochInfo,
-        true,
+        amountAddFee,
       ),
     ]
 
@@ -3506,6 +3535,7 @@ export class Clmm extends Base {
     amountIn,
     currencyOut,
     slippage,
+    catchLiquidityInsufficient = false,
   }: {
     poolInfo: ClmmPoolInfo
     tickArrayCache: { [key: string]: TickArray }
@@ -3516,6 +3546,7 @@ export class Clmm extends Base {
     amountIn: CurrencyAmount | TokenAmount
     currencyOut: Token | Currency
     slippage: Percent
+    catchLiquidityInsufficient: boolean
   }): ReturnTypeComputeAmountOutFormat {
     const amountInIsTokenAmount = amountIn instanceof TokenAmount
     const inputMint = (amountInIsTokenAmount ? amountIn.token : Token.WSOL).mint
@@ -3523,6 +3554,7 @@ export class Clmm extends Base {
     const _slippage = slippage.numerator.toNumber() / slippage.denominator.toNumber()
 
     const {
+      allTrade,
       realAmountIn: _realAmountIn,
       amountOut: _amountOut,
       minAmountOut: _minAmountOut,
@@ -3532,7 +3564,7 @@ export class Clmm extends Base {
       priceImpact,
       fee,
       remainingAccounts,
-    } = Clmm.computeAmountOut({
+    } = this.computeAmountOut({
       poolInfo,
       tickArrayCache,
       baseMint: inputMint,
@@ -3541,6 +3573,7 @@ export class Clmm extends Base {
 
       token2022Infos,
       epochInfo,
+      catchLiquidityInsufficient,
     })
 
     const realAmountIn = {
@@ -3603,6 +3636,7 @@ export class Clmm extends Base {
       : new CurrencyAmount(amountIn.currency, fee)
 
     return {
+      allTrade,
       realAmountIn,
       amountOut,
       minAmountOut,
@@ -3623,6 +3657,7 @@ export class Clmm extends Base {
     amountIn,
     slippage,
     priceLimit = new Decimal(0),
+    catchLiquidityInsufficient = false,
   }: {
     connection: Connection
     poolInfo: ClmmPoolInfo
@@ -3632,6 +3667,7 @@ export class Clmm extends Base {
     amountIn: BN
     slippage: number
     priceLimit?: Decimal
+    catchLiquidityInsufficient: boolean
   }) {
     const epochInfo = await connection.getEpochInfo()
     const token2022Infos = await fetchMultipleMintInfos({
@@ -3649,6 +3685,7 @@ export class Clmm extends Base {
       priceLimit,
       token2022Infos,
       epochInfo,
+      catchLiquidityInsufficient,
     })
   }
 
@@ -3661,6 +3698,7 @@ export class Clmm extends Base {
     amountIn,
     slippage,
     priceLimit = new Decimal(0),
+    catchLiquidityInsufficient = false,
   }: {
     poolInfo: ClmmPoolInfo
     tickArrayCache: { [key: string]: TickArray }
@@ -3672,6 +3710,7 @@ export class Clmm extends Base {
     amountIn: BN
     slippage: number
     priceLimit?: Decimal
+    catchLiquidityInsufficient: boolean
   }): ReturnTypeComputeAmountOut {
     let sqrtPriceLimitX64: BN
     if (priceLimit.equals(new Decimal(0))) {
@@ -3686,7 +3725,7 @@ export class Clmm extends Base {
       )
     }
 
-    const realAmountIn = getTransferAmountFee(
+    const _inputRealAmountIn = getTransferAmountFee(
       amountIn,
       token2022Infos[baseMint.toString()]?.feeConfig,
       epochInfo,
@@ -3694,6 +3733,8 @@ export class Clmm extends Base {
     )
 
     const {
+      allTrade,
+      realTradeAmountIn,
       expectedAmountOut: _expectedAmountOut,
       remainingAccounts,
       executionPrice: _executionPriceX64,
@@ -3702,8 +3743,16 @@ export class Clmm extends Base {
       poolInfo,
       tickArrayCache,
       baseMint,
-      realAmountIn.amount.sub(realAmountIn.fee ?? ZERO),
+      _inputRealAmountIn.amount.sub(_inputRealAmountIn.fee ?? ZERO),
       sqrtPriceLimitX64,
+      catchLiquidityInsufficient,
+    )
+
+    const realAmountIn = getTransferAmountFee(
+      realTradeAmountIn,
+      token2022Infos[baseMint.toString()]?.feeConfig,
+      epochInfo,
+      true,
     )
 
     const outMint = poolInfo.mintA.mint.equals(baseMint) ? poolInfo.mintB.mint : poolInfo.mintA.mint
@@ -3743,6 +3792,7 @@ export class Clmm extends Base {
     )
 
     return {
+      allTrade,
       realAmountIn,
       amountOut,
       minAmountOut,
@@ -4299,10 +4349,13 @@ export class Clmm extends Base {
               tickUpperState,
             )
             const rewardInfos = PositionUtils.GetPositionRewards(state, itemPA, tickLowerState, tickUpperState)
-            itemPA.tokenFeeAmountA = tokenFeeAmountA.gte(ZERO) ? tokenFeeAmountA : ZERO
-            itemPA.tokenFeeAmountB = tokenFeeAmountB.gte(ZERO) ? tokenFeeAmountB : ZERO
+            itemPA.tokenFeeAmountA =
+              tokenFeeAmountA.gte(ZERO) && tokenFeeAmountA.lt(U64_IGNORE_RANGE) ? tokenFeeAmountA : ZERO
+            itemPA.tokenFeeAmountB =
+              tokenFeeAmountB.gte(ZERO) && tokenFeeAmountA.lt(U64_IGNORE_RANGE) ? tokenFeeAmountB : ZERO
             for (let i = 0; i < rewardInfos.length; i++) {
-              itemPA.rewardInfos[i].pendingReward = rewardInfos[i].gte(ZERO) ? rewardInfos[i] : ZERO
+              itemPA.rewardInfos[i].pendingReward =
+                rewardInfos[i].gte(ZERO) && rewardInfos[i].lt(U64_IGNORE_RANGE) ? rewardInfos[i] : ZERO
             }
           }
         }

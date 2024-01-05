@@ -15,11 +15,12 @@ export declare const LOG_B_P_ERR_MARGIN_LOWER_X64 = "184467440737095516";
 export declare const LOG_B_P_ERR_MARGIN_UPPER_X64 = "15793534762490258745";
 export declare const FEE_RATE_DENOMINATOR: BN;
 export declare enum Fee {
-    rate_500 = 500,
-    rate_3000 = 3000,
+    rate_500 = 500,//  500 / 10e6 = 0.0005
+    rate_3000 = 3000,// 3000/ 10e6 = 0.003
     rate_10000 = 10000
 }
 export declare const TICK_SPACINGS: {
     [amount in Fee]: number;
 };
+export declare const U64_IGNORE_RANGE: BN;
 //# sourceMappingURL=constants.d.ts.map

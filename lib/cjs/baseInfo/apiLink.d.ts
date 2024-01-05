@@ -28,6 +28,9 @@ export declare const RAYDIUM_MAINNET: {
     readonly farmAprLine: "/v2/main/farm-apr-tv";
     readonly tokenInfo: "/v2/sdk/token/raydium.mainnet.json";
     readonly poolInfo: "/v2/sdk/liquidity/mainnet.json";
+    readonly dailyPoolInfo: "/v2/sdk/liquidity/date";
+    readonly uiPoolInfo: "/v2/sdk/liquidity/mainnet.ui.json";
+    readonly searchPool: "/v2/sdk/liquidity/mint/";
     readonly farmInfo: "/v2/sdk/farm-v2/mainnet.json";
     readonly idoInfo: "/v2/main/ido/pools";
     readonly idoProjectInfo: "/v2/main/ido/project/<id>";

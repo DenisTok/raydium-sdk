@@ -43,6 +43,7 @@ export interface ComputeAmountOutAmmLayout {
         feeAccount: PublicKey;
     };
     expirationTime: number | undefined;
+    allTrade: boolean;
 }
 export interface ComputeAmountOutRouteLayout {
     amountIn: TransferAmountFee;
@@ -64,6 +65,7 @@ export interface ComputeAmountOutRouteLayout {
         feeAccount: PublicKey;
     };
     expirationTime: number | undefined;
+    allTrade: boolean;
 }
 type ComputeAmountOutLayout = ComputeAmountOutAmmLayout | ComputeAmountOutRouteLayout;
 type makeSwapInstructionParam = {
