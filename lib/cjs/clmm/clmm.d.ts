@@ -135,6 +135,7 @@ export interface ReturnTypeGetTickPrice {
     tickSqrtPriceX64: BN;
 }
 export interface ReturnTypeComputeAmountOutFormat {
+    allTrade: boolean;
     realAmountIn: TransferAmountFee;
     amountOut: TransferAmountFee;
     minAmountOut: TransferAmountFee;
@@ -146,6 +147,7 @@ export interface ReturnTypeComputeAmountOutFormat {
     remainingAccounts: PublicKey[];
 }
 export interface ReturnTypeComputeAmountOut {
+    allTrade: boolean;
     realAmountIn: GetTransferAmountFee;
     amountOut: GetTransferAmountFee;
     minAmountOut: GetTransferAmountFee;
@@ -855,7 +857,7 @@ export declare class Clmm extends Base {
         token2022Infos: ReturnTypeFetchMultipleMintInfos;
         epochInfo: EpochInfo;
     }): ReturnTypeGetLiquidityAmountOut;
-    static getLiquidityFromAmounts({ poolInfo, tickLower, tickUpper, amountA, amountB, slippage, add, token2022Infos, epochInfo, }: {
+    static getLiquidityFromAmounts({ poolInfo, tickLower, tickUpper, amountA, amountB, slippage, add, token2022Infos, epochInfo, amountHasFee, }: {
         poolInfo: ClmmPoolInfo;
         tickLower: number;
         tickUpper: number;
@@ -865,8 +867,9 @@ export declare class Clmm extends Base {
         add: boolean;
         token2022Infos: ReturnTypeFetchMultipleMintInfos;
         epochInfo: EpochInfo;
+        amountHasFee: boolean;
     }): ReturnTypeGetLiquidityAmountOut;
-    static getAmountsFromLiquidity({ poolInfo, tickLower, tickUpper, liquidity, slippage, add, token2022Infos, epochInfo, }: {
+    static getAmountsFromLiquidity({ poolInfo, tickLower, tickUpper, liquidity, slippage, add, token2022Infos, epochInfo, amountAddFee, }: {
         poolInfo: ClmmPoolInfo;
         tickLower: number;
         tickUpper: number;
@@ -875,6 +878,7 @@ export declare class Clmm extends Base {
         add: boolean;
         token2022Infos: ReturnTypeFetchMultipleMintInfos;
         epochInfo: EpochInfo;
+        amountAddFee: boolean;
     }): ReturnTypeGetLiquidityAmountOut;
     static getPriceAndTick({ poolInfo, price, baseIn, }: {
         poolInfo: ClmmPoolInfo;
@@ -886,7 +890,7 @@ export declare class Clmm extends Base {
         tick: number;
         baseIn: boolean;
     }): ReturnTypeGetTickPrice;
-    static computeAmountOutFormat({ poolInfo, tickArrayCache, token2022Infos, epochInfo, amountIn, currencyOut, slippage, }: {
+    static computeAmountOutFormat({ poolInfo, tickArrayCache, token2022Infos, epochInfo, amountIn, currencyOut, slippage, catchLiquidityInsufficient, }: {
         poolInfo: ClmmPoolInfo;
         tickArrayCache: {
             [key: string]: TickArray;
@@ -896,8 +900,9 @@ export declare class Clmm extends Base {
         amountIn: CurrencyAmount | TokenAmount;
         currencyOut: Token | Currency;
         slippage: Percent;
+        catchLiquidityInsufficient: boolean;
     }): ReturnTypeComputeAmountOutFormat;
-    static computeAmountOutAndCheckToken({ connection, poolInfo, tickArrayCache, baseMint, amountIn, slippage, priceLimit, }: {
+    static computeAmountOutAndCheckToken({ connection, poolInfo, tickArrayCache, baseMint, amountIn, slippage, priceLimit, catchLiquidityInsufficient, }: {
         connection: Connection;
         poolInfo: ClmmPoolInfo;
         tickArrayCache: {
@@ -907,8 +912,9 @@ export declare class Clmm extends Base {
         amountIn: BN;
         slippage: number;
         priceLimit?: Decimal;
+        catchLiquidityInsufficient: boolean;
     }): Promise<ReturnTypeComputeAmountOut>;
-    static computeAmountOut({ poolInfo, tickArrayCache, baseMint, token2022Infos, epochInfo, amountIn, slippage, priceLimit, }: {
+    static computeAmountOut({ poolInfo, tickArrayCache, baseMint, token2022Infos, epochInfo, amountIn, slippage, priceLimit, catchLiquidityInsufficient, }: {
         poolInfo: ClmmPoolInfo;
         tickArrayCache: {
             [key: string]: TickArray;
@@ -919,6 +925,7 @@ export declare class Clmm extends Base {
         amountIn: BN;
         slippage: number;
         priceLimit?: Decimal;
+        catchLiquidityInsufficient: boolean;
     }): ReturnTypeComputeAmountOut;
     static computeAmountInAndCheckToken({ connection, poolInfo, tickArrayCache, baseMint, amountOut, slippage, priceLimit, }: {
         connection: Connection;

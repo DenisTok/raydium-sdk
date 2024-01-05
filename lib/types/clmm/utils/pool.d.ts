@@ -6,7 +6,9 @@ import { TickArray } from './tick';
 export declare class PoolUtils {
     static getOutputAmountAndRemainAccounts(poolInfo: ClmmPoolInfo, tickArrayCache: {
         [key: string]: TickArray;
-    }, inputTokenMint: PublicKey, inputAmount: BN, sqrtPriceLimitX64?: BN): {
+    }, inputTokenMint: PublicKey, inputAmount: BN, sqrtPriceLimitX64?: BN, catchLiquidityInsufficient?: boolean): {
+        allTrade: boolean;
+        realTradeAmountIn: BN;
         expectedAmountOut: BN;
         remainingAccounts: PublicKey[];
         executionPrice: BN;

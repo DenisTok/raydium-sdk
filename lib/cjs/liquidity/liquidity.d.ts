@@ -26,7 +26,9 @@ export interface LiquidityAssociatedPoolKeysV4 extends Omit<LiquidityPoolKeysV4,
  * @remarks
  * without partial markets keys
  */
-export type LiquidityAssociatedPoolKeys = LiquidityAssociatedPoolKeysV4;
+export type LiquidityAssociatedPoolKeys = LiquidityAssociatedPoolKeysV4 & {
+    configId: PublicKey;
+};
 export declare enum LiquidityPoolStatus {
     Uninitialized = 0,
     Initialized = 1,
@@ -170,20 +172,6 @@ export interface LiquiditySwapInstructionSimpleParams {
         checkCreateATAOwner?: boolean;
     };
 }
-export interface LiquidityCreatePoolInstructionParamsV4 {
-    poolKeys: LiquidityAssociatedPoolKeysV4;
-    userKeys: {
-        payer: PublicKey;
-    };
-}
-/**
- * Create pool instruction params
- */
-export type LiquidityCreatePoolInstructionParams = LiquidityCreatePoolInstructionParamsV4;
-/**
- * Create pool transaction params
- */
-export type LiquidityCreatePoolInstructionSimpleParams = LiquidityCreatePoolInstructionParams;
 export interface LiquidityInitPoolInstructionParamsV4 {
     poolKeys: LiquidityAssociatedPoolKeysV4;
     userKeys: {
@@ -293,6 +281,9 @@ export declare class Liquidity extends Base {
         programId: PublicKey;
         marketId: PublicKey;
     }): PublicKey;
+    static getAssociatedConfigId({ programId }: {
+        programId: PublicKey;
+    }): PublicKey;
     static getAssociatedPoolKeys({ version, marketVersion, marketId, baseMint, quoteMint, baseDecimals, quoteDecimals, programId, marketProgramId, }: {
         version: 4 | 5;
         marketVersion: 3;
@@ -304,6 +295,10 @@ export declare class Liquidity extends Base {
         programId: PublicKey;
         marketProgramId: PublicKey;
     }): LiquidityAssociatedPoolKeys;
+    static getCreatePoolFee({ connection, programId }: {
+        connection: Connection;
+        programId: PublicKey;
+    }): Promise<BN>;
     static makeAddLiquidityInstruction(params: LiquidityAddInstructionParams): {
         address: {};
         innerTransaction: {
@@ -377,62 +372,6 @@ export declare class Liquidity extends Base {
         address: {};
         innerTransactions: (T extends TxVersion.LEGACY ? import("../base").InnerSimpleLegacyTransaction : import("../base").InnerSimpleV0Transaction)[];
     }>;
-    static makeCreatePoolInstruction(params: LiquidityCreatePoolInstructionParams): {
-        address: {};
-        innerTransaction: {
-            instructions: TransactionInstruction[];
-            signers: never[];
-            lookupTableAddress: PublicKey[];
-            instructionTypes: InstructionType[];
-        };
-    };
-    static makeCreatePoolInstructionV4({ poolKeys, userKeys }: LiquidityCreatePoolInstructionParamsV4): {
-        address: {};
-        innerTransaction: {
-            instructions: TransactionInstruction[];
-            signers: never[];
-            lookupTableAddress: PublicKey[];
-            instructionTypes: InstructionType[];
-        };
-    };
-    static makeCreatePoolInstructionSimple<T extends TxVersion>(params: LiquidityCreatePoolInstructionSimpleParams & {
-        makeTxVersion: T;
-        lookupTableCache?: CacheLTA;
-        computeBudgetConfig?: ComputeBudgetConfig;
-        connection: Connection;
-        payer: PublicKey;
-    }): Promise<{
-        address: {};
-        innerTransactions: (T extends TxVersion.LEGACY ? import("../base").InnerSimpleLegacyTransaction : import("../base").InnerSimpleV0Transaction)[];
-    }>;
-    static makeInitPoolInstruction(params: LiquidityInitPoolInstructionParams): {
-        address: {};
-        innerTransaction: {
-            instructions: TransactionInstruction[];
-            signers: never[];
-            lookupTableAddress: PublicKey[];
-            instructionTypes: InstructionType[];
-        };
-    };
-    static makeInitPoolInstructionV4({ poolKeys, userKeys, startTime }: LiquidityInitPoolInstructionParamsV4): {
-        address: {};
-        innerTransaction: {
-            instructions: TransactionInstruction[];
-            signers: never[];
-            lookupTableAddress: PublicKey[];
-            instructionTypes: InstructionType[];
-        };
-    };
-    static makeInitPoolInstructionSimple<T extends TxVersion>(params: LiquidityInitPoolTransactionParams & {
-        makeTxVersion: T;
-        lookupTableCache?: CacheLTA;
-        computeBudgetConfig?: ComputeBudgetConfig;
-    }): Promise<{
-        address: {
-            lpTokenAccount: PublicKey;
-        };
-        innerTransactions: (T extends TxVersion.LEGACY ? import("../base").InnerSimpleLegacyTransaction : import("../base").InnerSimpleV0Transaction)[];
-    }>;
     static makeSimulatePoolInfoInstruction({ poolKeys }: {
         poolKeys: LiquidityPoolKeys;
     }): {
@@ -445,7 +384,7 @@ export declare class Liquidity extends Base {
         };
     };
     static isV4(lsl: any): lsl is LiquidityStateV4;
-    static makeCreatePoolV4InstructionV2Simple<T extends TxVersion>({ connection, programId, marketInfo, baseMintInfo, quoteMintInfo, baseAmount, quoteAmount, startTime, ownerInfo, associatedOnly, computeBudgetConfig, checkCreateATAOwner, makeTxVersion, lookupTableCache, }: {
+    static makeCreatePoolV4InstructionV2Simple<T extends TxVersion>({ connection, programId, marketInfo, baseMintInfo, quoteMintInfo, baseAmount, quoteAmount, startTime, ownerInfo, associatedOnly, computeBudgetConfig, checkCreateATAOwner, makeTxVersion, lookupTableCache, feeDestinationId, }: {
         connection: Connection;
         programId: PublicKey;
         marketInfo: {
@@ -475,6 +414,7 @@ export declare class Liquidity extends Base {
     } & {
         makeTxVersion: T;
         lookupTableCache?: CacheLTA;
+        feeDestinationId: PublicKey;
     }): Promise<{
         address: {
             programId: PublicKey;
@@ -494,7 +434,7 @@ export declare class Liquidity extends Base {
         };
         innerTransactions: (T extends TxVersion.LEGACY ? import("../base").InnerSimpleLegacyTransaction : import("../base").InnerSimpleV0Transaction)[];
     }>;
-    static makeCreatePoolV4InstructionV2({ programId, ammId, ammAuthority, ammOpenOrders, lpMint, coinMint, pcMint, coinVault, pcVault, withdrawQueue, ammTargetOrders, poolTempLp, marketProgramId, marketId, userWallet, userCoinVault, userPcVault, userLpVault, nonce, openTime, coinAmount, pcAmount, lookupTableAddress, }: {
+    static makeCreatePoolV4InstructionV2({ programId, ammId, ammAuthority, ammOpenOrders, lpMint, coinMint, pcMint, coinVault, pcVault, ammTargetOrders, marketProgramId, marketId, userWallet, userCoinVault, userPcVault, userLpVault, nonce, openTime, coinAmount, pcAmount, lookupTableAddress, ammConfigId, feeDestinationId, }: {
         programId: PublicKey;
         ammId: PublicKey;
         ammAuthority: PublicKey;
@@ -504,9 +444,7 @@ export declare class Liquidity extends Base {
         pcMint: PublicKey;
         coinVault: PublicKey;
         pcVault: PublicKey;
-        withdrawQueue: PublicKey;
         ammTargetOrders: PublicKey;
-        poolTempLp: PublicKey;
         marketProgramId: PublicKey;
         marketId: PublicKey;
         userWallet: PublicKey;
@@ -514,6 +452,8 @@ export declare class Liquidity extends Base {
         userPcVault: PublicKey;
         userLpVault: PublicKey;
         lookupTableAddress?: PublicKey;
+        ammConfigId: PublicKey;
+        feeDestinationId: PublicKey;
         nonce: number;
         openTime: BN;
         coinAmount: BN;
@@ -548,26 +488,6 @@ export declare class Liquidity extends Base {
         lookupTableCache?: CacheLTA;
     }): Promise<{
         address: {
-            /**
-             * Compute the another currency amount of add liquidity
-             *
-             * @param params - {@link LiquidityComputeAnotherAmountParams}
-             *
-             * @returns
-             * anotherCurrencyAmount - currency amount without slippage
-             * @returns
-             * maxAnotherCurrencyAmount - currency amount with slippage
-             *
-             * @returns {@link CurrencyAmount}
-             *
-             * @example
-             * ```
-             * Liquidity.computeAnotherAmount({
-             *   // 1%
-             *   slippage: new Percent(1, 100)
-             * })
-             * ```
-             */
             nftMint: PublicKey;
             tickArrayLower: PublicKey;
             tickArrayUpper: PublicKey;
@@ -652,9 +572,11 @@ export declare class Liquidity extends Base {
     static computeAnotherAmount({ poolKeys, poolInfo, amount, anotherCurrency, slippage, }: LiquidityComputeAnotherAmountParams): {
         anotherAmount: CurrencyAmount;
         maxAnotherAmount: CurrencyAmount;
+        liquidity: BN;
     } | {
         anotherAmount: TokenAmount;
         maxAnotherAmount: TokenAmount;
+        liquidity: BN;
     };
     static _computePriceImpact(currentPrice: Price, amountIn: BN, amountOut: BN): Percent;
     static getRate(poolInfo: LiquidityPoolInfo): Price;
