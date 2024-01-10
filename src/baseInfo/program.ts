@@ -31,7 +31,7 @@ export const MAINNET_PROGRAM_ID: ProgramId = {
   AmmV4: new PublicKey('675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8'),
   AmmStable: new PublicKey('5quBtoiQqxF9Jv6KYKctB59NT3gtJD2Y65kdnB1Uev3h'),
 
-  CLMM: new PublicKey('73t2CRAshvSTkMBNGUkkM3Lp4cydX8rmatWAJo9BEssx'),
+  CLMM: new PublicKey('cLmhcuG6pHbGHLzEKphgq6DBJvSiiY4h8D4kAppw7jd'),
 
   Router: new PublicKey('routeUGWgWzqBWFcrCfv8tritsqukccJPu3q5GPP3xS'),
 }
@@ -49,7 +49,7 @@ export const DEVNET_PROGRAM_ID: ProgramId = {
   AmmV4: new PublicKey('HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8'),
   AmmStable: new PublicKey('DDg4VmQaJV9ogWce7LpcjBA9bv22wRp5uaTPa5pGjijF'),
 
-  CLMM: new PublicKey('73t2CRAshvSTkMBNGUkkM3Lp4cydX8rmatWAJo9BEssx'),
+  CLMM: new PublicKey('cLmhcuG6pHbGHLzEKphgq6DBJvSiiY4h8D4kAppw7jd'),
 
   Router: new PublicKey('BVChZ3XFEwTMUk1o9i3HAf91H6mFxSwa5X2wFAWhYPhU'),
 }
